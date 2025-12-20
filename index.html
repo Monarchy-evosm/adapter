@@ -1,118 +1,324 @@
-
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>OSINT Bio — Адаптер профиля</title>
-  <style>
-    :root{--bg:#0f1724;--card:#0b1220;--accent:#9b5cff;--muted:#94a3b8;--glass:rgba(255,255,255,0.04)}
-    *{box-sizing:border-box}
-    body{margin:0;min-height:100vh;background:linear-gradient(135deg,#071126 0%, #0b1530 50%, #071126 100%);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial;font-size:15px;color:#e6eef8;display:flex;align-items:center;justify-content:center;padding:40px}
-    .card{width:920px;max-width:100%;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:14px;padding:26px;box-shadow:0 8px 30px rgba(2,6,23,0.6);display:grid;grid-template-columns:220px 1fr;gap:22px}
-    .avatar{background:linear-gradient(135deg, rgba(155,92,255,0.12), rgba(59,130,246,0.06));border-radius:12px;padding:18px;display:flex;flex-direction:column;align-items:center;text-align:center}
-    .avatar .img{width:120px;height:120px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#3b82f6);display:flex;align-items:center;justify-content:center;font-weight:700;color:#021027;font-size:30px}
-    .handle{margin-top:14px;font-weight:700;font-size:18px}
-    .sub{color:var(--muted);font-size:13px;margin-top:4px}
-    .badges{margin-top:12px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
-    .badge{background:var(--glass);padding:6px 10px;border-radius:999px;color:var(--muted);font-weight:600;font-size:13px}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSINT ADAPTER | MNARCHY</title>
+    <style>
+        :root {
+            --bg: #050505;
+            --card-bg: rgba(15, 15, 15, 0.95);
+            --accent: #9b5cff;
+            --text-main: #e0e0e0;
+            --text-dim: #888;
+            --border: rgba(155, 92, 255, 0.2);
+        }
 
-    .main{padding:12px 16px;background:linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));border-radius:10px}
-    h1{margin:0;font-size:20px}
-    .meta{display:flex;gap:12px;margin-top:10px;flex-wrap:wrap}
-    .pill{background:rgba(255,255,255,0.03);padding:6px 10px;border-radius:8px;color:var(--muted);font-weight:600;font-size:13px}
+        * { box-sizing: border-box; transition: all 0.3s ease; }
 
-    .section{margin-top:16px}
-    .section h3{margin:0 0 8px 0;font-size:13px;color:var(--muted)}
-    .skills{display:flex;gap:8px;flex-wrap:wrap}
-    .skill{background:rgba(155,92,255,0.12);padding:6px 10px;border-radius:8px;font-weight:700;color:var(--accent);font-size:13px}
+        body, html {
+            margin: 0; padding: 0;
+            background: var(--bg);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden; /* Скролл внутри карточки */
+            height: 100vh;
+        }
 
-    .raw{background:linear-gradient(90deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));border-radius:8px;padding:12px;font-family:monospace;color:#cfe6ff;word-break:break-all}
+        /* Canvas для нейронов */
+        #canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
 
-    .controls{display:flex;gap:8px;margin-top:12px}
-    button.copy{background:linear-gradient(90deg,var(--accent),#3b82f6);border:none;padding:8px 12px;color:#021027;border-radius:8px;font-weight:700;cursor:pointer}
-    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px 12px;border-radius:8px;color:var(--muted);cursor:pointer}
+        /* Анимация появления */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); filter: blur(10px); }
+            to { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
 
-    .footer{margin-top:18px;color:var(--muted);font-size:13px;display:flex;justify-content:space-between;align-items:center}
+        .wrapper {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            padding: 20px;
+            animation: fadeIn 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+        }
 
-    @media(max-width:720px){.card{grid-template-columns:1fr;}}
-  </style>
+        .main-card {
+            width: 850px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            backdrop-filter: blur(15px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8), 0 0 20px rgba(155, 92, 255, 0.1);
+        }
+
+        /* Header & Tabs */
+        .header {
+            padding: 30px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .avatar-circle {
+            width: 80px; height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), #4f2fb3);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; font-weight: bold; color: #fff;
+            box-shadow: 0 0 15px var(--accent);
+        }
+
+        .tabs-nav {
+            display: flex;
+            gap: 10px;
+            background: rgba(255,255,255,0.03);
+            padding: 5px;
+            border-radius: 12px;
+            margin-left: auto;
+        }
+
+        .tab-btn {
+            padding: 8px 20px;
+            border: none;
+            background: transparent;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-weight: 600;
+            border-radius: 8px;
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        /* Content Areas */
+        .content {
+            padding: 30px;
+            min-height: 350px;
+        }
+
+        .tab-content { display: none; animation: fadeIn 0.5s ease; }
+        .tab-content.active { display: block; }
+
+        .grid-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .data-box {
+            background: rgba(255,255,255,0.02);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 3px solid var(--accent);
+        }
+
+        .label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 5px; }
+        .value { font-family: 'Courier New', monospace; font-size: 14px; }
+
+        /* Buttons */
+        .footer {
+            padding: 20px 30px;
+            background: rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+            text-decoration: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px var(--accent);
+        }
+
+        .btn-ghost {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 13px;
+        }
+    </style>
 </head>
 <body>
-  <div class="card" role="region" aria-label="OSINT Profile Adapter">
-    <div class="avatar">
-      <div class="img">?</div>
-      <div class="handle">@mnarchy</div>
-      <div class="sub">#2022 Community · expert coder</div>
-      <div class="badges">
-        <div class="badge">Russia</div>
-        <div class="badge">Evangecalism vitrum</div>
-        <div class="badge">EVOSM</div>
-      </div>
+
+<canvas id="canvas"></canvas>
+
+<div class="wrapper">
+    <div class="main-card">
+        <div class="header">
+            <div class="avatar-circle">MN</div>
+            <div>
+                <h1 style="margin:0; font-size: 24px;">@mnarchy</h1>
+                <span style="color: var(--accent); font-size: 13px;">OSINT ADAPTER PROFILE</span>
+            </div>
+            <div class="tabs-nav">
+                <button class="tab-btn active" onclick="openTab(event, 'main')">Профиль</button>
+                <button class="tab-btn" onclick="openTab(event, 'projects')">Проекты</button>
+                <button class="tab-btn" onclick="openTab(event, 'data')">Данные</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div id="main" class="tab-content active">
+                <h3>Основная информация</h3>
+                <div class="grid-info">
+                    <div class="data-box">
+                        <div class="label">Статус</div>
+                        <div class="value">Expert Coder / 2022 Community</div>
+                    </div>
+                    <div class="data-box">
+                        <div class="label">Локация</div>
+                        <div class="value">Russian Federation</div>
+                    </div>
+                    <div class="data-box">
+                        <div class="label">Специализация</div>
+                        <div class="value">Python, Pentest, System Arch</div>
+                    </div>
+                    <div class="data-box">
+                        <div class="label">Псевдонимы</div>
+                        <div class="value">Монарх, Эвклида, Порабощеный</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="projects" class="tab-content">
+                <h3>Активные разработки</h3>
+                <ul style="list-style: none; padding: 0;">
+                    <li class="data-box" style="margin-bottom: 10px;">
+                        <strong>EVOSM</strong> — Инфраструктурный модуль безопасности.
+                    </li>
+                    <li class="data-box" style="margin-bottom: 10px;">
+                        <strong>Evangecalism Vitrum</strong> — Основной текущий проект.
+                    </li>
+                    <li class="data-box">
+                        <strong>Hydragen</strong> — Архивные наработки.
+                    </li>
+                </ul>
+            </div>
+
+            <div id="data" class="tab-content">
+                <h3>Fingerprints</h3>
+                <div class="data-box" style="margin-bottom: 15px;">
+                    <div class="label">qTox ID</div>
+                    <div class="value" style="word-break: break-all;" id="tox-id">57AF5F2AC7DA8973A7507A01A5A005E49F4F8AB89CF00B5152C5E7FFD276EF3B357A7F5D7B3F</div>
+                </div>
+                <button class="btn-primary" style="width: 100%; justify-content: center;" onclick="copyTox()">Копировать ID</button>
+            </div>
+        </div>
+
+        <div class="footer">
+            <a href="https://t.me/euqlida" target="_blank" class="btn-primary">
+                Сопоставитель адаптера
+            </a>
+            <span class="btn-ghost">System v.4.0.1 (Stable)</span>
+        </div>
     </div>
-    <div class="main">
-      <h1>Монарх — profile OSINT / био-адаптер</h1>
-      <div class="meta">
-        <div class="pill"/div>Main namesBBasic
-        <div class="pill">Role: MT · OSINT · GEOSINT · Community · expert coder</div>
-      </div>
+</div>
 
-      <div class="section">
-        <h3>Проекты / tag</h3>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <div class="skill">Evangecalism vitrum</div>
-          <div class="skill">EVOSM</div>
-        </div>
-      </div>
-
-      <div class="section">
-        <h3>Навыки</h3>
-        <div class="skills">
-          <div class="skill">Python</div>
-          <div class="skill">JavaScript</div>
-          <div class="skill">System Admin</div>
-          <div class="skill">Pentest</div>
-        </div>
-      </div>
-
-      <div class="section">
-        <h3>Контакты / fingerprints</h3>
-        <div class="raw" id="qtox">qTox: 57AF5F2AC7DA8973A7507A01A5A005E49F4F8AB89CF00B5152C5E7FFD276EF3B357A7F5D7B3F</div>
-        <div class="controls">
-          <button class="copy" onclick="copyQ()">Копировать qTox</button>
-          <button class="ghost" onclick="toggleRaw()">Показать/скрыть исходники</button>
-        </div>
-      </div>
-
-      <div class="section" id="changelog" style="display:none">
-        <h3>Перечень изменений</h3>
-        <div class="raw">- my main tag: @mnarchy
-- main names: Монарх, Эвклида, Порабощеный, Доставщик Пиццы*
-- удалено: https://doxbin.com/user/Defendant
-- удалено: старый qTox
-- заменено qTox на: 57AF5F2AC7DA8973A7507A01A5A005E49F4F8AB89CF00B5152C5E7FFD276EF3B357A7F5D7B3F
-- смена Project: Evangecalism vitrum / EVOSM
-- смена #2022 Community, expert coder</div>
-      </div>
-
-      <div class="footer">
-        <div>адаптер OSINT</div>
-        <div style="opacity:0.9">Совет: нажмите «Копировать qTox» для быстрой работы</div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    function copyQ(){
-      const text = document.getElementById('qtox').textContent.replace(/^qTox:\s*/,'');
-      navigator.clipboard.writeText(text).then(()=>{
-        alert('qTox скопирован в буфер');
-      },()=>{alert('Не удалось скопировать. Выделите и скопируйте вручную.');});
+<script>
+    // --- ЛОГИКА ВКЛАДОК ---
+    function openTab(evt, tabName) {
+        let content = document.getElementsByClassName("tab-content");
+        for (let i = 0; i < content.length; i++) content[i].classList.remove("active");
+        
+        let buttons = document.getElementsByClassName("tab-btn");
+        for (let i = 0; i < buttons.length; i++) buttons[i].classList.remove("active");
+        
+        document.getElementById(tabName).classList.add("active");
+        evt.currentTarget.classList.add("active");
     }
-    function toggleRaw(){
-      const el = document.getElementById('changelog');
-      el.style.display = (el.style.display === 'none')? 'block' : 'none';
+
+    function copyTox() {
+        const text = document.getElementById('tox-id').innerText;
+        navigator.clipboard.writeText(text);
+        alert('Скопировано!');
     }
-  </script>
+
+    // --- 3D НЕЙРОНЫ (CANVAS) ---
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    class Particle {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height;
+            this.vx = (Math.random() - 0.5) * 0.5;
+            this.vy = (Math.random() - 0.5) * 0.5;
+            this.radius = Math.random() * 2 + 1;
+        }
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+            if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+        }
+        draw() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(155, 92, 255, 0.5)';
+            ctx.fill();
+        }
+    }
+
+    function init() {
+        for (let i = 0; i < 100; i++) particles.push(new Particle());
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach((p, index) => {
+            p.update();
+            p.draw();
+            for (let j = index + 1; j < particles.length; j++) {
+                const p2 = particles[j];
+                const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+                if (dist < 150) {
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.strokeStyle = `rgba(155, 92, 255, ${1 - dist/150})`;
+                    ctx.lineWidth = 0.5;
+                    ctx.stroke();
+                }
+            }
+        });
+        requestAnimationFrame(animate);
+    }
+
+    init();
+    animate();
+</script>
 </body>
 </html>
